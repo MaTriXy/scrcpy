@@ -57,14 +57,17 @@ static void usage(const char *arg0) {
         "        resize window to 1:1 (pixel-perfect)\n"
         "\n"
         "    Ctrl+x\n"
+        "    Double-click on black borders\n"
         "        resize window to remove black borders\n"
         "\n"
         "    Ctrl+h\n"
         "    Home\n"
+        "    Middle-click\n"
         "        click on HOME\n"
         "\n"
         "    Ctrl+b\n"
         "    Ctrl+Backspace\n"
+        "    Right-click (when screen is on)\n"
         "        click on BACK\n"
         "\n"
         "    Ctrl+m\n"
@@ -79,7 +82,7 @@ static void usage(const char *arg0) {
         "    Ctrl+p\n"
         "        click on POWER (turn screen on/off)\n"
         "\n"
-        "    Right-click\n"
+        "    Right-click (when screen is off)\n"
         "        turn screen on\n"
         "\n"
         "    Ctrl+v\n"
@@ -188,36 +191,30 @@ static SDL_bool parse_args(struct args *args, int argc, char *argv[]) {
     int c;
     while ((c = getopt_long(argc, argv, "b:hm:p:s:v", long_options, NULL)) != -1) {
         switch (c) {
-            case 'b': {
+            case 'b':
                 if (!parse_bit_rate(optarg, &args->bit_rate)) {
                     return SDL_FALSE;
                 }
                 break;
-            }
-            case 'h': {
+            case 'h':
                 args->help = SDL_TRUE;
                 break;
-            }
-            case 'm': {
+            case 'm':
                 if (!parse_max_size(optarg, &args->max_size)) {
                     return SDL_FALSE;
                 }
                 break;
-            }
-            case 'p': {
+            case 'p':
                 if (!parse_port(optarg, &args->port)) {
                     return SDL_FALSE;
                 }
                 break;
-            }
-            case 's': {
+            case 's':
                 args->serial = optarg;
                 break;
-            }
-            case 'v': {
+            case 'v':
                 args->version = SDL_TRUE;
                 break;
-            }
             default:
                 // getopt prints the error message on stderr
                 return SDL_FALSE;
@@ -233,6 +230,12 @@ static SDL_bool parse_args(struct args *args, int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+#ifdef __WINDOWS__
+    // disable buffering, we want logs immediately
+    // even line buffering (setvbuf() with mode _IOLBF) is not sufficient
+    setbuf(stdout, NULL);
+    setbuf(stderr, NULL);
+#endif
     struct args args = {
         .serial = NULL,
         .help = SDL_FALSE,

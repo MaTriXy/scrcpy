@@ -11,6 +11,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
 
 public class ControlEventReaderTest {
 
@@ -43,8 +45,8 @@ public class ControlEventReaderTest {
         DataOutputStream dos = new DataOutputStream(bos);
         dos.writeByte(ControlEvent.TYPE_TEXT);
         byte[] text = "testé".getBytes(StandardCharsets.UTF_8);
-        dos.writeByte(text.length);
-        dos.write("testé".getBytes(StandardCharsets.UTF_8));
+        dos.writeShort(text.length);
+        dos.write(text);
         byte[] packet = bos.toByteArray();
 
         reader.readFrom(new ByteArrayInputStream(packet));
@@ -52,6 +54,26 @@ public class ControlEventReaderTest {
 
         Assert.assertEquals(ControlEvent.TYPE_TEXT, event.getType());
         Assert.assertEquals("testé", event.getText());
+    }
+
+    @Test
+    public void testParseLongTextEvent() throws IOException {
+        ControlEventReader reader = new ControlEventReader();
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bos);
+        dos.writeByte(ControlEvent.TYPE_TEXT);
+        byte[] text = new byte[ControlEventReader.TEXT_MAX_LENGTH];
+        Arrays.fill(text, (byte) 'a');
+        dos.writeShort(text.length);
+        dos.write(text);
+        byte[] packet = bos.toByteArray();
+
+        reader.readFrom(new ByteArrayInputStream(packet));
+        ControlEvent event = reader.next();
+
+        Assert.assertEquals(ControlEvent.TYPE_TEXT, event.getType());
+        Assert.assertEquals(new String(text, StandardCharsets.US_ASCII), event.getText());
     }
 
     @Test
